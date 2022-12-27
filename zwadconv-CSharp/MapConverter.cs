@@ -28,7 +28,7 @@ namespace zwadconv_CSharp
         public static void ToHexen(byte[] file, Map map)
         {
             // Check type first, Doom maps need more work than Hexen maps
-            // Doom to Hexen code: (Adapt to convert directly to UDMF)
+            // Doom to Hexen code:
             UsedLineIDs = false;
             FlySize = 2;
             FlyScript = 0;
