@@ -14,7 +14,7 @@ namespace zwadconv_CSharp
 {
     class Program
     {
-        static readonly byte MaxSteps = 3;
+        static readonly byte MaxSteps = 2;
 
         static readonly WAD Wad_PWAD = new();
         static string WadName = string.Empty;
@@ -110,7 +110,7 @@ namespace zwadconv_CSharp
 
             List<Map> mapsToProcess = new();
 
-            Console.WriteLine($"Step 2 of 3: Extracting lumps (except for maps).");
+            Console.WriteLine($"Step 1 of 2: Gathering maps.");
             Stopwatch sw = Stopwatch.StartNew();
             for (int i = 0; i < Wad_PWAD.Lumps.Count; i++)
             {
@@ -191,14 +191,14 @@ namespace zwadconv_CSharp
                 }
 
             EndLoop:
-                Console.Title = $"(2/{MaxSteps}) Lumps: {i + 1}/{lumpCount} ({(i + 1) / sw.Elapsed.TotalSeconds:0.##} Lumps/s)";
+                Console.Title = $"(1/{MaxSteps}) Lumps: {i + 1}/{lumpCount} ({(i + 1) / sw.Elapsed.TotalSeconds:0.##} Lumps/s)";
             }
 
             sw.Stop();
             //Console.Title = $"(3/3) Lumps: {i + 1}/{lumpCount} ({(i + 1) / sw.Elapsed.TotalSeconds:0.##} Lumps/s)";
             Console.WriteLine($"Finished step 2 complete @ {lumpCount / sw.Elapsed.TotalSeconds:0.##} Lumps/s\n");
 
-            Console.WriteLine($"Step 3 of 3: Extracting maps.");
+            Console.WriteLine($"Step 2 of 2: Processing maps.");
             sw = Stopwatch.StartNew();
             for (int i = 0; i < mapsToProcess.Count; i++)
             {
@@ -211,11 +211,11 @@ namespace zwadconv_CSharp
                     Console.WriteLine("-- Done.");
                 }
 
-                Console.Title = $"(3/{MaxSteps}) Lumps: {i + 1}/{mapsToProcess.Count} ({(i + 1) / sw.Elapsed.TotalSeconds:0.##} Lumps/s)";
+                Console.Title = $"(2/{MaxSteps}) Lumps: {i + 1}/{mapsToProcess.Count} ({(i + 1) / sw.Elapsed.TotalSeconds:0.##} Lumps/s)";
             }
 
             sw.Stop();
-            Console.WriteLine($"Finished step 3 complete @ {mapsToProcess.Count / sw.Elapsed.TotalSeconds:0.##} Lumps/s\n");
+            Console.WriteLine($"Finished step 2 complete @ {mapsToProcess.Count / sw.Elapsed.TotalSeconds:0.##} Lumps/s\n");
 
             TimeSpan total = DateTime.Now - start;
             Console.WriteLine($"Time Taken: {(total.TotalMinutes > 1 ? $"{(int)Math.Floor(total.TotalMinutes)} minute{((int)Math.Floor(total.TotalMinutes) != 1 ? "s" : "")} and " : "")}{total.Seconds}.{total.Milliseconds} seconds.");
