@@ -25,10 +25,8 @@ namespace zwadconv_CSharp
 
         static bool UsedLineIDs;
 
-        public static void ToHexen(byte[] file, Map map)
+        public static void ToHexen(byte[] file, Map map, ref List<byte> data, ref List<byte> directory, ref int currentOffset, ref int totalLumps)
         {
-            // Check type first, Doom maps need more work than Hexen maps
-            // Doom to Hexen code:
             UsedLineIDs = false;
             FlySize = 2;
             FlyScript = 0;
@@ -48,12 +46,14 @@ namespace zwadconv_CSharp
 
             for (int i = 0; i < THINGS.Size;)
             {
-                MapThing_Hexen newThing = new();
+                MapThing_Hexen newThing = new()
+                {
+                    X = BitConverter.ToInt16(new[] { file[THINGS.Offset + i++], file[THINGS.Offset + i++] }),
+                    Y = BitConverter.ToInt16(new[] { file[THINGS.Offset + i++], file[THINGS.Offset + i++] }),
+                    Angle = BitConverter.ToUInt16(new[] { file[THINGS.Offset + i++], file[THINGS.Offset + i++] }),
+                    Type = BitConverter.ToUInt16(new[] { file[THINGS.Offset + i++], file[THINGS.Offset + i++] })
+                };
 
-                newThing.X = BitConverter.ToInt16(new[] { file[THINGS.Offset + i++], file[THINGS.Offset + i++] });
-                newThing.Y = BitConverter.ToInt16(new[] { file[THINGS.Offset + i++], file[THINGS.Offset + i++] });
-                newThing.Angle = BitConverter.ToUInt16(new[] { file[THINGS.Offset + i++], file[THINGS.Offset + i++] });
-                newThing.Type = BitConverter.ToUInt16(new[] { file[THINGS.Offset + i++], file[THINGS.Offset + i++] });
                 short options = BitConverter.ToInt16(new[] { file[THINGS.Offset + i++], file[THINGS.Offset + i++] });
 
                 newThing.Flags = (ushort)((options & 0xF) | 0x7E0);
@@ -310,20 +310,18 @@ namespace zwadconv_CSharp
             }
 
             // -- Compile map --
-            byte[] header = new byte[12] { (byte)'P', (byte)'W', (byte)'A', (byte)'D', 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 };
-            List<byte> data = new();
-            List<byte> directory = new();
-
-            int currentOffset = 12;
-            int totalLumps = 0;
 
             List<byte> temp = new();
             // Map marker
             totalLumps++;
             directory.AddRange(BitConverter.GetBytes(currentOffset));
             directory.AddRange(BitConverter.GetBytes(0));
-            directory.AddRange("MAP01".ToByteArray());
-            directory.AddRange(new byte[] { 0x00, 0x00, 0x00 });
+            directory.AddRange(map.Name.ToByteArray());
+
+            for (int i = map.Name.Length; i <= 8; i++)
+            {
+                directory.Add(0x00);
+            }
 
             // THINGS
             for (int i = 0; i < newThings.Count; i++)
@@ -463,7 +461,7 @@ namespace zwadconv_CSharp
             if (FlyScript > 0)
             {
                 // We generated a behavior lump
-                FlyBehavior[0] = 5456705; // This is the header because fuck you
+                FlyBehavior[0] = 5456705;
                 FlyBehavior[1] = FlySize * 4;
                 FlyBehavior[FlySize++] = FlyScript;
 
@@ -475,7 +473,6 @@ namespace zwadconv_CSharp
                 }
 
                 FlyBehavior[FlySize++] = 0;     // 0 strings
-
 
                 for (int i = 0; i < FlySize; i++)
                 {
@@ -503,26 +500,6 @@ namespace zwadconv_CSharp
                 directory.AddRange("BEHAVIOR".ToByteArray());
                 currentOffset += NullBehavior.Length;
             }
-
-            // Fill in header and write data
-            byte[] b1 = BitConverter.GetBytes(totalLumps);
-            header[4] = b1[0];
-            header[5] = b1[1];
-            header[6] = b1[2];
-            header[7] = b1[3];
-
-            byte[] b2 = BitConverter.GetBytes(data.Count + 12);
-            header[8] = b2[0];
-            header[9] = b2[1];
-            header[10] = b2[2];
-            header[11] = b2[3];
-
-            List<byte> fullFile = new();
-            fullFile.AddRange(header);
-            fullFile.AddRange(data);
-            fullFile.AddRange(directory);
-
-            File.WriteAllBytes(@$".\pk3\MAPS\{map.Name}.WAD", fullFile.ToArray());
         }
 
         static int PointOnSide(short x, short y, MapNode node)
