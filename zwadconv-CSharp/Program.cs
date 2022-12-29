@@ -45,7 +45,7 @@ namespace zwadconv_CSharp
                 ExitOnError("File doesn't exist:", InputPath);
             }
 
-            WadName = string.Concat(InputPath.Split('\\')[^1].SkipLast(4));
+            WadName = InputPath.Split('\\')[^1];
             Console.WriteLine($"File: {InputPath.Split('\\')[^1]}");
 
             byte[] pwadBytes = File.ReadAllBytes(InputPath);
@@ -67,12 +67,26 @@ namespace zwadconv_CSharp
 
             DateTime start = DateTime.Now;
 
-            Console.WriteLine($"Processing {WadName}.wad.");
+            Console.WriteLine($"Processing {WadName}.");
 
             bool inMap = false;
             Map map = new();
 
             List<Map> mapsToProcess = new();
+
+            for (int i = dirOffset, pos = 0; i < pwadBytes.Length; pos++)
+            {
+                int offset = BitConverter.ToInt32(new[] { pwadBytes[i++], pwadBytes[i++], pwadBytes[i++], pwadBytes[i++] });
+                int size = BitConverter.ToInt32(new[] { pwadBytes[i++], pwadBytes[i++], pwadBytes[i++], pwadBytes[i++] });
+                string name = string.Concat(new[] { (char)pwadBytes[i++], (char)pwadBytes[i++], (char)pwadBytes[i++], (char)pwadBytes[i++], (char)pwadBytes[i++], (char)pwadBytes[i++], (char)pwadBytes[i++], (char)pwadBytes[i++] }).Trim('\0');
+                
+                Wad_PWAD.Lumps[pos] = new Lump()
+                {
+                    Name = name,
+                    Offset = offset,
+                    Size = size
+                };
+            }
 
             Console.WriteLine($"Step 1 of 2: Gathering maps.");
             Stopwatch sw = Stopwatch.StartNew();
@@ -160,9 +174,9 @@ namespace zwadconv_CSharp
 
             sw.Stop();
             //Console.Title = $"(3/3) Lumps: {i + 1}/{lumpCount} ({(i + 1) / sw.Elapsed.TotalSeconds:0.##} Lumps/s)";
-            Console.WriteLine($"Finished step 1 complete @ {lumpCount / sw.Elapsed.TotalSeconds:0.##} Lumps/s\n");
+            Console.WriteLine($"Finished step 1.\n");
 
-            Console.WriteLine($"Step 2 of 2: Processing {map.Lumps.Count} maps.");
+            Console.WriteLine($"Step 2 of 2: Processing {mapsToProcess.Count} maps.");
 
             List<byte> data = new();
             List<byte> directory = new();
@@ -193,7 +207,10 @@ namespace zwadconv_CSharp
             }
 
             sw.Stop();
-            Console.WriteLine($"Finished step 2 complete @ {mapsToProcess.Count / sw.Elapsed.TotalSeconds:0.##} Lumps/s\n");
+            Console.WriteLine($"Finished step 2.\n");
+
+            Console.WriteLine($"Total lumps: {totalLumps}.");
+            Console.WriteLine($"Directory location: {data.Count + 12}.\n");
 
             Console.WriteLine("Writing output file.");
             byte[] header = new byte[12] { (byte)'P', (byte)'W', (byte)'A', (byte)'D', 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 };

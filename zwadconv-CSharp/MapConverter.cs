@@ -318,7 +318,7 @@ namespace zwadconv_CSharp
             directory.AddRange(BitConverter.GetBytes(0));
             directory.AddRange(map.Name.ToByteArray());
 
-            for (int i = map.Name.Length; i <= 8; i++)
+            for (int i = map.Name.Length; i < 8; i++)
             {
                 directory.Add(0x00);
             }
