@@ -9,10 +9,10 @@ namespace zwadconv_CSharp
 {
     class Map
     {
-        public string Name = "";
-        public MapFormat Format = MapFormat.Doom;
-        public Dictionary<int, Lump> Lumps = new();
-        public MapInfo MapInfo = new();
+        public string                Name    = "";
+        public MapFormat             Format  = MapFormat.Doom;
+        public Dictionary<int, Lump> Lumps   = new Dictionary<int, Lump>();
+        public MapInfo               MapInfo = new MapInfo();
     }
 
     enum MapFormat
