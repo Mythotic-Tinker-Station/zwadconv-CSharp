@@ -99,7 +99,7 @@ namespace zwadconv_CSharp
             GunOnce,
             GunMany,
             PushOnce,
-            PushMany,
+            PushMany
         };
 
 
@@ -122,11 +122,19 @@ namespace zwadconv_CSharp
             public byte NumParams;
             public byte[] Args = new byte[5] { 0x00, 0x00, 0x00, 0x00, 0x00 };
 
-            public static implicit operator SpecialTranslation((int Flags, LineSpecial Special, int NumParams) inParams) => new() { Flags = (byte)inParams.Flags, NewSpecial = inParams.Special, NumParams = (byte)inParams.NumParams };
+            public static implicit operator SpecialTranslation((int Flags, LineSpecial Special, int NumParams) inParams)
+			{
+				return new SpecialTranslation
+				{
+					Flags      = (byte)inParams.Flags,
+					NewSpecial = inParams.Special,
+					NumParams  = (byte)inParams.NumParams
+				};
+			}
 
-            public static implicit operator SpecialTranslation((int Flags, LineSpecial Special, int NumParams, int[] Args) inParams)
+			public static implicit operator SpecialTranslation((int Flags, LineSpecial Special, int NumParams, int[] Args) inParams)
             {
-                SpecialTranslation xlat = new() { Flags = (byte)inParams.Flags, NewSpecial = inParams.Special, NumParams = (byte)inParams.NumParams };
+                SpecialTranslation xlat = new SpecialTranslation { Flags = (byte)inParams.Flags, NewSpecial = inParams.Special, NumParams = (byte)inParams.NumParams };
                 for (int i = 0; i < inParams.Args.Length; i++)
                 {
                     xlat.Args[i] = (byte)inParams.Args[i];
@@ -137,7 +145,7 @@ namespace zwadconv_CSharp
 
             public static implicit operator SpecialTranslation((int Flags, LineSpecial Special, int NumParams, short[] Args) inParams)
             {
-                SpecialTranslation xlat = new() { Flags = (byte)inParams.Flags, NewSpecial = inParams.Special, NumParams = (byte)inParams.NumParams };
+                SpecialTranslation xlat = new SpecialTranslation { Flags = (byte)inParams.Flags, NewSpecial = inParams.Special, NumParams = (byte)inParams.NumParams };
                 for (int i = 0; i < inParams.Args.Length; i++)
                 {
                     xlat.Args[i] = (byte)inParams.Args[i];
@@ -148,7 +156,7 @@ namespace zwadconv_CSharp
 
             public static implicit operator SpecialTranslation((int Flags, LineSpecial Special, int NumParams, byte[] Args) inParams)
             {
-                SpecialTranslation xlat = new() { Flags = (byte)inParams.Flags, NewSpecial = inParams.Special, NumParams = (byte)inParams.NumParams };
+                SpecialTranslation xlat = new SpecialTranslation { Flags = (byte)inParams.Flags, NewSpecial = inParams.Special, NumParams = (byte)inParams.NumParams };
                 for (int i = 0; i < inParams.Args.Length; i++)
                 {
                     xlat.Args[i] = inParams.Args[i];

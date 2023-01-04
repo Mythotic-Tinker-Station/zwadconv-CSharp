@@ -21,7 +21,7 @@ namespace zwadconv_CSharp
         static byte[] LineIDMaps = new byte[65536];
         static ushort[] ReverseLineIDMaps = new ushort[256];
 
-        static bool SomeProblems = false;
+       //static bool SomeProblems = false;
 
         static bool UsedLineIDs;
 
@@ -31,30 +31,30 @@ namespace zwadconv_CSharp
             FlySize = 2;
             FlyScript = 0;
 
-            List<MapThing_Hexen> newThings = new();
-            List<MapLineDef_Hexen> newLineDefs = new();
-            List<MapSubSector> newSubSectors = new();
-            List<MapSector> newSectors = new();
+            List<MapThing_Hexen>   newThings     = new List<MapThing_Hexen>();
+            List<MapLineDef_Hexen> newLineDefs   = new List<MapLineDef_Hexen>();
+            List<MapSubSector>     newSubSectors = new List<MapSubSector>();
+            List<MapSector>        newSectors    = new List<MapSector>();
 
-            List<MapLineDef_Doom> cachedLineDefs = new();
-            List<MapSideDef> cachedSideDefs = new();
-            List<MapSeg> cachedSegs = new();
-            List<MapNode> cachedNodes = new();
+            List<MapLineDef_Doom> cachedLineDefs = new List<MapLineDef_Doom>();
+            List<MapSideDef>      cachedSideDefs = new List<MapSideDef>();
+            List<MapSeg>          cachedSegs     = new List<MapSeg>();
+            List<MapNode>         cachedNodes    = new List<MapNode>();
 
             // THINGS
             Lump THINGS = map.Lumps[0];
 
-            for (int i = 0; i < THINGS.Size;)
+            for (int i = 0; i < THINGS.Size;i+=10)
             {
-                MapThing_Hexen newThing = new()
-                {
-                    X = BitConverter.ToInt16(new[] { file[THINGS.Offset + i++], file[THINGS.Offset + i++] }),
-                    Y = BitConverter.ToInt16(new[] { file[THINGS.Offset + i++], file[THINGS.Offset + i++] }),
-                    Angle = BitConverter.ToUInt16(new[] { file[THINGS.Offset + i++], file[THINGS.Offset + i++] }),
-                    Type = BitConverter.ToUInt16(new[] { file[THINGS.Offset + i++], file[THINGS.Offset + i++] })
+                MapThing_Hexen newThing = new MapThing_Hexen
+				{
+                    X     = BitConverter.ToInt16(file, THINGS.Offset  + i),
+                    Y     = BitConverter.ToInt16(file, THINGS.Offset  + i+2),
+                    Angle = BitConverter.ToUInt16(file, THINGS.Offset + i+4),
+                    Type  = BitConverter.ToUInt16(file, THINGS.Offset + i+6)
                 };
 
-                short options = BitConverter.ToInt16(new[] { file[THINGS.Offset + i++], file[THINGS.Offset + i++] });
+                short options = BitConverter.ToInt16(file, THINGS.Offset + i+8);
 
                 newThing.Flags = (ushort)((options & 0xF) | 0x7E0);
 
@@ -87,8 +87,8 @@ namespace zwadconv_CSharp
 
             for (int i = 0, pos = 0; i < LINEDEFS.Size; pos++)
             {
-                MapLineDef_Doom doomLineDef = new()
-                {
+                MapLineDef_Doom doomLineDef = new MapLineDef_Doom
+				{
                     Vertex1 = BitConverter.ToUInt16(new[] { file[LINEDEFS.Offset + i++], file[LINEDEFS.Offset + i++] }),
                     Vertex2 = BitConverter.ToUInt16(new[] { file[LINEDEFS.Offset + i++], file[LINEDEFS.Offset + i++] }),
                     Flags = BitConverter.ToUInt16(new[] { file[LINEDEFS.Offset + i++], file[LINEDEFS.Offset + i++] }),
@@ -97,11 +97,11 @@ namespace zwadconv_CSharp
                     SideNum = new[] { BitConverter.ToUInt16(new[] { file[LINEDEFS.Offset + i++], file[LINEDEFS.Offset + i++] }), BitConverter.ToUInt16(new[] { file[LINEDEFS.Offset + i++], file[LINEDEFS.Offset + i++] }) }
                 };
 
-                MapLineDef_Hexen hexenLineDef = new();
+                MapLineDef_Hexen hexenLineDef = new MapLineDef_Hexen();
                 if (TranslateLineDef(ref hexenLineDef, doomLineDef))
                 {
                     Console.WriteLine($"Linedef {pos} referenced sector tag {doomLineDef.Tag}, but there were no free scripts.");
-                    SomeProblems = true;
+                    //SomeProblems = true;
                 }
 
                 cachedLineDefs.Add(doomLineDef);
@@ -148,10 +148,10 @@ namespace zwadconv_CSharp
 
             for (int i = 0; i < SSECTORS.Size;)
             {
-                MapSubSector subSector = new()
-                {
+                MapSubSector subSector = new MapSubSector
+				{
                     NumSegs = BitConverter.ToInt16(new[] { file[SSECTORS.Offset + i++], file[SSECTORS.Offset + i++] }),
-                    FirstSeg = BitConverter.ToUInt16(new[] { file[SSECTORS.Offset + i++], file[SSECTORS.Offset + i++] }),
+                    FirstSeg = BitConverter.ToUInt16(new[] { file[SSECTORS.Offset + i++], file[SSECTORS.Offset + i++] })
                 };
 
                 MapSeg seg = cachedSegs[subSector.FirstSeg];
@@ -200,8 +200,8 @@ namespace zwadconv_CSharp
 
             for (int i = 0; i < SECTORS.Size;)
             {
-                MapSector sector = new()
-                {
+                MapSector sector = new MapSector
+				{
                     FloorHeight = BitConverter.ToInt16(new[] { file[SECTORS.Offset + i++], file[SECTORS.Offset + i++] }),
                     CeilingHeight = BitConverter.ToInt16(new[] { file[SECTORS.Offset + i++], file[SECTORS.Offset + i++] }),
                     FloorPic = new[] { file[SECTORS.Offset + i++], file[SECTORS.Offset + i++], file[SECTORS.Offset + i++], file[SECTORS.Offset + i++], file[SECTORS.Offset + i++], file[SECTORS.Offset + i++], file[SECTORS.Offset + i++], file[SECTORS.Offset + i++] },
@@ -302,7 +302,7 @@ namespace zwadconv_CSharp
                             {
                                 // This line does something special! Gak!
                                 Console.WriteLine($"FIX THIS: Linedef {i} (might) need id {LineIDMaps[line.Tag]} but already has a special.");
-                                SomeProblems = true;
+                                //SomeProblems = true;
                             }
                         }
                     }
@@ -311,7 +311,7 @@ namespace zwadconv_CSharp
 
             // -- Compile map --
 
-            List<byte> temp = new();
+            List<byte> temp = new List<byte>();
             // Map marker
             totalLumps++;
             directory.AddRange(BitConverter.GetBytes(currentOffset));
@@ -509,18 +509,22 @@ namespace zwadconv_CSharp
 
             if (node.DX == 0)
             {
-                if (x <= node.X)
-                    return node.DY > 0 ? 1 : 0;
+				if( x <= node.X )
+				{
+					return node.DY > 0 ? 1 : 0;
+				}
 
-                return node.DY < 0 ? 1 : 0;
+				return node.DY < 0 ? 1 : 0;
             }
 
             if (node.DY == 0)
             {
-                if (y <= node.Y)
-                    return node.DX < 0 ? 1 : 0;
+				if( y <= node.Y )
+				{
+					return node.DX < 0 ? 1 : 0;
+				}
 
-                return node.DX > 0 ? 1 : 0;
+				return node.DX > 0 ? 1 : 0;
             }
 
             dx = (short)(x - node.X);
@@ -587,11 +591,17 @@ namespace zwadconv_CSharp
                     if (SpecialTranslations[special].Args[i] == TAG)
                     {
                         usedtag = true;
-                        if (mld.Tag != 666 && mld.Tag != 667)
-                            tag = MapTag(mld.Tag);
-                        else
-                            tag = mld.Tag;
-                        args[i] = tag;
+						if( mld.Tag != 666
+						 && mld.Tag != 667 )
+						{
+							tag = MapTag( mld.Tag );
+						}
+						else
+						{
+							tag = mld.Tag;
+						}
+
+						args[i] = tag;
                     }
                     else if (SpecialTranslations[special].Args[i] == LINETAG)
                     {
@@ -612,11 +622,17 @@ namespace zwadconv_CSharp
                     // A ZDoom Static_Init special
                     nspecial = (byte)LineSpecial.Static_Init;
                     usedtag = true;
-                    if (mld.Tag != 666 && mld.Tag != 667)
-                        tag = MapTag(mld.Tag);
-                    else
-                        tag = mld.Tag;
-                    args[0] = tag;
+					if( mld.Tag != 666
+					 && mld.Tag != 667 )
+					{
+						tag = MapTag( mld.Tag );
+					}
+					else
+					{
+						tag = mld.Tag;
+					}
+
+					args[0] = tag;
                     args[1] = (ushort)(special - ZDoomStaticInits);
                 }
                 else
@@ -632,12 +648,17 @@ namespace zwadconv_CSharp
             else
             {
                 // Anything else is a BOOM generalized linedef type
-                if (mld.Tag != 666 && mld.Tag != 667)
-                    tag = MapTag(mld.Tag);
-                else
-                    tag = mld.Tag;
+				if( mld.Tag != 666
+				 && mld.Tag != 667 )
+				{
+					tag = MapTag( mld.Tag );
+				}
+				else
+				{
+					tag = mld.Tag;
+				}
 
-                switch ((TriggerType)(special & 0x0007))
+				switch ((TriggerType)(special & 0x0007))
                 {
                     case TriggerType.WalkMany:
                         flags |= ML_REPEATABLE;
@@ -652,11 +673,16 @@ namespace zwadconv_CSharp
                         goto case TriggerType.SwitchOnce;
                     case TriggerType.SwitchOnce:
                     case TriggerType.PushOnce:
-                        if (passthrough)
-                            flags |= ML_ACTIVATEUSETHROUGH;
-                        else
-                            flags |= ML_ACTIVATEUSE;
-                        break;
+						if( passthrough )
+						{
+							flags |= ML_ACTIVATEUSETHROUGH;
+						}
+						else
+						{
+							flags |= ML_ACTIVATEUSE;
+						}
+
+						break;
 
                     case TriggerType.GunMany:
                         flags |= ML_REPEATABLE;
@@ -667,9 +693,11 @@ namespace zwadconv_CSharp
                 }
 
                 // We treat push triggers like switch triggers with zero tags.
-                if ((special & 0x0007) is (int)TriggerType.PushMany or (int)TriggerType.PushOnce)
-                    args[0] = 0;
-                else
+				if( ( special & 0x0007 ) is (int)TriggerType.PushMany or (int)TriggerType.PushOnce )
+				{
+					args[0] = 0;
+				}
+				else
                 {
                     args[0] = tag;
                     usedtag = true;
@@ -679,9 +707,12 @@ namespace zwadconv_CSharp
                 {
                     // Generalized crusher (tag, dnspeed, upspeed, silent, damage)
                     nspecial = (byte)LineSpecial.Generic_Crusher;
-                    if ((special & 0x0020) > 0)
-                        flags |= ML_MONSTERSCANACTIVATE;
-                    switch (special & 0x0018)
+					if( ( special & 0x0020 ) > 0 )
+					{
+						flags |= ML_MONSTERSCANACTIVATE;
+					}
+
+					switch (special & 0x0018)
                     {
                         case 0x0000: args[1] = (ushort)C_SLOW; break;
                         case 0x0008: args[1] = (ushort)C_NORMAL; break;
@@ -697,9 +728,12 @@ namespace zwadconv_CSharp
                 {
                     // Generalized stairs (tag, speed, step, dir/igntxt, reset)
                     nspecial = (byte)LineSpecial.Generic_Stairs;
-                    if ((special & 0x0020) > 0)
-                        flags |= ML_MONSTERSCANACTIVATE;
-                    switch (special & 0x0018)
+					if( ( special & 0x0020 ) > 0 )
+					{
+						flags |= ML_MONSTERSCANACTIVATE;
+					}
+
+					switch (special & 0x0018)
                     {
                         case 0x0000: args[1] = (ushort)S_SLOW; break;
                         case 0x0008: args[1] = (ushort)S_NORMAL; break;
@@ -721,9 +755,12 @@ namespace zwadconv_CSharp
                 {
                     // Generalized lift (tag, speed, delay, target, height)
                     nspecial = (byte)LineSpecial.Generic_Lift;
-                    if ((special & 0x0020) > 0)
-                        flags |= ML_MONSTERSCANACTIVATE;
-                    switch (special & 0x0018)
+					if( ( special & 0x0020 ) > 0 )
+					{
+						flags |= ML_MONSTERSCANACTIVATE;
+					}
+
+					switch (special & 0x0018)
                     {
                         case 0x0000: args[1] = (ushort)(P_SLOW * 2); break;
                         case 0x0008: args[1] = (ushort)(P_NORMAL * 2); break;
@@ -745,9 +782,12 @@ namespace zwadconv_CSharp
                 {
                     // Generalized locked door (tag, speed, kind, delay, lock)
                     nspecial = (byte)LineSpecial.Generic_Door;
-                    if ((special & 0x0080) > 0)
-                        flags |= ML_MONSTERSCANACTIVATE;
-                    switch (special & 0x0018)
+					if( ( special & 0x0080 ) > 0 )
+					{
+						flags |= ML_MONSTERSCANACTIVATE;
+					}
+
+					switch (special & 0x0018)
                     {
                         case 0x0000: args[1] = (ushort)D_SLOW; break;
                         case 0x0008: args[1] = (ushort)D_NORMAL; break;
@@ -757,11 +797,16 @@ namespace zwadconv_CSharp
                     args[2] = (ushort)((special & 0x0020) >> 5);
                     args[3] = 0;
                     args[4] = (ushort)((special & 0x01c0) >> 6);
-                    if (args[4] == 0)
-                        args[4] = (ushort)KeyType.AnyKey;
-                    else if (args[4] == 7)
-                        args[4] = (ushort)KeyType.AllKeys;
-                    args[4] = (ushort)(args[4] | ((special & 0x0200) >> 2));
+					if( args[4] == 0 )
+					{
+						args[4] = (ushort)KeyType.AnyKey;
+					}
+					else if( args[4] == 7 )
+					{
+						args[4] = (ushort)KeyType.AllKeys;
+					}
+
+					args[4] = (ushort)(args[4] | ((special & 0x0200) >> 2));
                     numparms = 5;
                 }
                 else if (special <= GenCeilingBase)
@@ -790,12 +835,16 @@ namespace zwadconv_CSharp
                 {
                     // Generalized ceiling (tag, speed, height, target, change/model/direct/crush)
                     // Generalized floor (tag, speed, height, target, change/model/direct/crush)
-                    if (special <= GenFloorBase)
-                        nspecial = (byte)LineSpecial.Generic_Ceiling;
-                    else
-                        nspecial = (byte)LineSpecial.Generic_Floor;
+					if( special <= GenFloorBase )
+					{
+						nspecial = (byte)LineSpecial.Generic_Ceiling;
+					}
+					else
+					{
+						nspecial = (byte)LineSpecial.Generic_Floor;
+					}
 
-                    switch (special & 0x0018)
+					switch (special & 0x0018)
                     {
                         case 0x0000: args[1] = (ushort)F_SLOW; break;
                         case 0x0008: args[1] = (ushort)F_NORMAL; break;
@@ -834,9 +883,12 @@ namespace zwadconv_CSharp
                     ScriptStarts[FlyScript++] = FlySize * 4;
                     FlyBehavior[FlySize++] = (uint)(PCD_LSPEC1DIRECT + numparms - 1);
                     FlyBehavior[FlySize++] = nspecial;
-                    for (i = 0; i < numparms; i++)
-                        FlyBehavior[FlySize++] = args[i];
-                    FlyBehavior[FlySize++] = PCD_TERMINATE;
+					for( i = 0; i < numparms; i++ )
+					{
+						FlyBehavior[FlySize++] = args[i];
+					}
+
+					FlyBehavior[FlySize++] = PCD_TERMINATE;
 
                     ld.Special = (byte)LineSpecial.ACS_ExecuteAlways;
                     ld.Args[0] = (byte)FlyScript;
@@ -847,9 +899,12 @@ namespace zwadconv_CSharp
             }
 
             ld.Special = nspecial;
-            for (i = 0; i < 5; i++)
-                ld.Args[i] = (byte)args[i];
-            return res;
+			for( i = 0; i < 5; i++ )
+			{
+				ld.Args[i] = (byte)args[i];
+			}
+
+			return res;
         }
 
         static byte MapLineID(ushort id)
@@ -891,7 +946,7 @@ namespace zwadconv_CSharp
             }
 
             Console.WriteLine($"FIX THIS: Could not remap lineid {id} (using 0)!");
-            SomeProblems = true;
+            //SomeProblems = true;
             return 0;
         }
 
@@ -923,10 +978,13 @@ namespace zwadconv_CSharp
             {
                 int i;
 
-                if (tag == 666 || tag == 667)
-                    Console.Write("WARNING! ");
+				if( tag == 666
+				 || tag == 667 )
+				{
+					Console.Write( "WARNING! " );
+				}
 
-                for (i = 128; i < 256; i++)
+				for (i = 128; i < 256; i++)
                 {
                     if ((UsedTags[i / 8] & (1 << (i & 7))) == 0)
                     {
@@ -944,7 +1002,7 @@ namespace zwadconv_CSharp
                 }
             }
             Console.Write($"FIX THIS: Could not remap tag {tag} (using 0)!\n");
-            SomeProblems = true;
+            //SomeProblems = true;
             return 0;
         }
 

@@ -1,8 +1,7 @@
 {
   "profiles": {
     "zwadconv_CSharp": {
-      "commandName": "Project",
-      "commandLineArgs": "testmap.wad testmapHex.wad"
+      "commandName": "Project"
     }
   }
 }

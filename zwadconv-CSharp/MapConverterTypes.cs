@@ -3,16 +3,8 @@ namespace zwadconv_CSharp
     public class MapConverterTypes
     {
         // Assume these types are Hexen, unless it's specified.
-        class MapThing_Doom
-        {
-            public short X; // 0 1
-            public short Y; // 2 3
-            public short Angle; // 4 5
-            public short Type; // 6 7
-            public short Options; // 8 9
-        }
 
-        public class MapThing_Hexen
+		public class MapThing_Hexen
         {
             public ushort ID;
             public short X;

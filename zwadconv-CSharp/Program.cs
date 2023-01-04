@@ -14,18 +14,23 @@ using static zwadconv_CSharp.Constants;
 
 namespace zwadconv_CSharp
 {
-    class Program
-    {
-        static readonly byte MaxSteps = 2;
+	using System.Text;
 
-        static readonly WAD Wad_PWAD = new();
-        static string WadName = string.Empty;
+	class Program
+	{
+		private static string SEPARATOR = Path.DirectorySeparatorChar.ToString();
+
+        static readonly byte   MaxSteps  = 2;
+
+        static readonly WAD    Wad_PWAD = new WAD();
+        static          string WadName  = string.Empty;
 
         static string InputPath = string.Empty;
         public static string OutputPath = string.Empty;
 
         static void Main(string[] args)
         {
+			Console.WriteLine("Separator: " +SEPARATOR);
             bool promptForExit = false;
 
             string[] files = Directory.GetFiles(Environment.CurrentDirectory, "*.wad");
@@ -36,8 +41,10 @@ namespace zwadconv_CSharp
             }
             else
             {
-                InputPath = args[0].Replace("/", "\\");
-                OutputPath = args[1].Replace("/", "\\");
+				InputPath  = args[0].Replace("/", Program.SEPARATOR);
+				OutputPath = args[1].Replace("/", Program.SEPARATOR);
+				InputPath  = args[0].Replace("\\", Program.SEPARATOR);
+				OutputPath = args[1].Replace("\\", Program.SEPARATOR);
             }
 
             if (!File.Exists(InputPath))
@@ -45,8 +52,8 @@ namespace zwadconv_CSharp
                 ExitOnError("File doesn't exist:", InputPath);
             }
 
-            WadName = InputPath.Split('\\')[^1];
-            Console.WriteLine($"File: {InputPath.Split('\\')[^1]}");
+            WadName = InputPath.Split(Program.SEPARATOR)[^1];
+            Console.WriteLine($"File: {InputPath.Split(Program.SEPARATOR)[^1]}");
 
             byte[] pwadBytes = File.ReadAllBytes(InputPath);
 
@@ -58,11 +65,11 @@ namespace zwadconv_CSharp
                 ExitOnError("File isn't a WAD:", InputPath);
             }
 
-            int lumpCount = BitConverter.ToInt32(new[] { pwadBytes[4], pwadBytes[5], pwadBytes[6], pwadBytes[7] });
+            int  lumpCount  = BitConverter.ToInt32(pwadBytes, 4);
             Console.WriteLine($"Lumps: {lumpCount}");
-            Wad_PWAD.Lumps = new(lumpCount);
+            Wad_PWAD.Lumps = new Dictionary<int, Lump>(lumpCount);
 
-            int dirOffset = BitConverter.ToInt32(new[] { pwadBytes[8], pwadBytes[9], pwadBytes[10], pwadBytes[11] });
+            int dirOffset = BitConverter.ToInt32(pwadBytes, 8);
             Console.WriteLine($"Lump directory starts at {dirOffset} bytes\n");
 
             DateTime start = DateTime.Now;
@@ -70,17 +77,18 @@ namespace zwadconv_CSharp
             Console.WriteLine($"Processing {WadName}.");
 
             bool inMap = false;
-            Map map = new();
+            Map map = new Map();
 
-            List<Map> mapsToProcess = new();
+            List<Map> mapsToProcess = new List<Map>();
 
-            for (int i = dirOffset, pos = 0; i < pwadBytes.Length; pos++)
-            {
-                int offset = BitConverter.ToInt32(new[] { pwadBytes[i++], pwadBytes[i++], pwadBytes[i++], pwadBytes[i++] });
-                int size = BitConverter.ToInt32(new[] { pwadBytes[i++], pwadBytes[i++], pwadBytes[i++], pwadBytes[i++] });
-                string name = string.Concat(new[] { (char)pwadBytes[i++], (char)pwadBytes[i++], (char)pwadBytes[i++], (char)pwadBytes[i++], (char)pwadBytes[i++], (char)pwadBytes[i++], (char)pwadBytes[i++], (char)pwadBytes[i++] }).Trim('\0');
-                
-                Wad_PWAD.Lumps[pos] = new Lump()
+            for (int pos = 0; pos < lumpCount; pos++)
+			{
+				int    i      = dirOffset + pos * 16;
+				int    offset = BitConverter.ToInt32(pwadBytes, i);
+                int    size   = BitConverter.ToInt32(pwadBytes, i +4);
+                string name   = Encoding.UTF8.GetString( pwadBytes, i +8, 8 ).Trim('\0');
+
+				Wad_PWAD.Lumps[pos] = new Lump()
                 {
                     Name = name,
                     Offset = offset,
@@ -126,7 +134,7 @@ namespace zwadconv_CSharp
                     mapsToProcess.Add(map);
 
                     inMap = false;
-                    map = new();
+                    map = new Map();
 
                     goto EndLoop;
                 }
@@ -178,10 +186,10 @@ namespace zwadconv_CSharp
 
             Console.WriteLine($"Step 2 of 2: Processing {mapsToProcess.Count} maps.");
 
-            List<byte> data = new();
-            List<byte> directory = new();
-            int currentOffset = 12;
-            int totalLumps = 0;
+            List<byte> data          = new List<byte>();
+            List<byte> directory     = new List<byte>();
+            int        currentOffset = 12;
+            int        totalLumps    = 0;
 
             sw = Stopwatch.StartNew();
             for (int i = 0; i < mapsToProcess.Count; i++)
@@ -228,7 +236,7 @@ namespace zwadconv_CSharp
             header[10] = b2[2];
             header[11] = b2[3];
 
-            List<byte> fullFile = new();
+            List<byte> fullFile = new List<byte>();
             fullFile.AddRange(header);
             fullFile.AddRange(data);
             fullFile.AddRange(directory);
@@ -263,7 +271,7 @@ namespace zwadconv_CSharp
         {
             Console.Write(text);
 
-            StreamWriter logger = new(@$".\Logs\{WadName}.txt");
+            StreamWriter logger = new StreamWriter( @$".\Logs\{WadName}.txt" );
             logger.Write(text);
             logger.Close();
         }
@@ -272,7 +280,7 @@ namespace zwadconv_CSharp
         {
             Console.WriteLine(text);
 
-            StreamWriter logger = new(@$".\Logs\{WadName}.txt");
+            StreamWriter logger = new StreamWriter( @$".\Logs\{WadName}.txt" );
             logger.WriteLine(text);
             logger.Close();
         }
